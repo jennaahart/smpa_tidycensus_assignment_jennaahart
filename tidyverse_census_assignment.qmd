@@ -35,7 +35,7 @@ You'll need your Census API Key:
 
 ```{r echo=FALSE}
 
-myapikey <- "c99a374b27fb1aed803ab9f5403113a5b9657062"
+myapikey <- ""
 
 census_api_key(myapikey, overwrite=TRUE)
 ```
@@ -74,6 +74,8 @@ md_counties%>%
 ```
 
 **Q2** Which Maryland counties have a median age of at least 50? You can use the dataframe you just made to answer this, but you must write code to display only those counties with a median age of at least 50.
+
+**Talbot County and Worcester County**
 
 ```{r}
 
@@ -129,17 +131,35 @@ full_join(md_counties1, md_counties2, by = c("GEOID", "NAME"))%>%
 
 **Q4** Given the counties with the largest percentage of 5-17 year-olds that speak Spanish at home, which county stands out to you in the data as different from the others? How would you describe the top 5 counties? How would you describe Garrett County's numbers?
 
-PUT ANSWER HERE
+**Prince George's and Montgomery County stood out the most to me because their rates of Spanish-speaking children were 87% and 73%, while the rest of the top counties were around 20-30%**
+
+**The top five have total populations of 1200-3400 children. The percent of children who speak Spanish falls generally at 50%, with large outliers for Prince George County and Montgomery County.**
+
+**Garrett county has one of the smallest percents of Spanish-speaking children, with only 5%. It also has a relatively small total population of children with 1,100 children.**
 
 **Q5** Pennsylvanians are currently requesting and submitting mail ballots for the November election. You'd like to know more about the people who live in the areas sending in mail ballots. Read in the `zip_totals.csv` file in the data folder containing the number of returned mail ballots per zip code. Then create a dataframe of Pennsylvania ZCTAs that include the following variables from the 2019 ACS: total population and median income. You will need to add `output = "wide"` to the get_acs function so that you get columns for those two variables' estimates and margins of error.
 
 Join the ZCTA dataframe to the zip totals dataframe and calculate a per capita rate for mail ballots per 100 population in each ZCTA, and write code to answer the following questions?
 
 -   Which zip code *that has returned at least 100 mail ballots* has the highest per capita rate?
+
+    **19436**
+
 -   Where is that zip code and what does Census Reporter say about its demographics?
+
+    **This zipcode is in Montgomery County. It's median age is 79 and it is entirely white.**
+
 -   For zip codes with a per capita rate of at least 10 returned ballots per 100 people, how many have median incomes of at least \$100,000?
+
+    **Zero**
+
 -   How many have median incomes less than the state figure of \$68,957?
+
+    **39**
+
 -   What's the most interesting one from this last result?
+
+    **The most interesting to me is 18913 because its per capita rate is so much higher than the rest, and it also has one of the highest median incomes.**
 
 ```{r}
 
@@ -168,10 +188,29 @@ pa_pop%>%
   rename("total_pop" = "B01003_001E")%>%
   rename("med_income" = "B07011_001E")%>%
   mutate(ballots_per_cap = (count/total_pop)*100)%>%
+  filter(ballots_per_cap < 100000000)%>%
   select("zip", "ballots_per_cap", "med_income", "total_pop", "count")%>%
   arrange(desc(ballots_per_cap))
 
+pa_pop%>%
+  rename("total_pop" = "B01003_001E")%>%
+  rename("med_income" = "B07011_001E")%>%
+  mutate(ballots_per_cap = (count/total_pop)*100)%>%
+  filter(ballots_per_cap >10)%>%
+  filter(ballots_per_cap < 100000000)%>%
+  filter(med_income > 100000)%>%
+  select("zip", "ballots_per_cap", "med_income", "total_pop", "count")%>%
+  arrange(desc(ballots_per_cap))
 
+pa_pop%>%
+  rename("total_pop" = "B01003_001E")%>%
+  rename("med_income" = "B07011_001E")%>%
+  mutate(ballots_per_cap = (count/total_pop)*100)%>%
+  filter(ballots_per_cap >10)%>%
+  filter(ballots_per_cap < 100000000)%>%
+  filter(med_income < 68957)%>%
+  select("zip", "ballots_per_cap", "med_income", "total_pop", "count")%>%
+  arrange(desc(ballots_per_cap))
   
   
 
