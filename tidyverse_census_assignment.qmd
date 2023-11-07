@@ -35,7 +35,7 @@ You'll need your Census API Key:
 
 ```{r echo=FALSE}
 
-myapikey <- "YOUR API KEY"
+myapikey <- "c99a374b27fb1aed803ab9f5403113a5b9657062"
 
 census_api_key(myapikey, overwrite=TRUE)
 ```
@@ -48,32 +48,40 @@ You'll also need to load the list of American Community Survey variables from th
 
 ```{r}
 
-
+censusvariables <- load_variables(2021, "acs5", cache = TRUE)
 ```
 
 ## Answer questions
 
-**Q1** What is the Maryland jurisdiction with the lowest median age, according to the ACS 2021 5-year estimates? You will need to find the variable for median age first. 
+**Q1** What is the Maryland jurisdiction with the lowest median age, according to the ACS 2021 5-year estimates? You will need to find the variable for median age first.
+
+**Baltimore County has the lowest median age**
 
 ```{r}
 
+medage <- "B01002_001"
+md_counties <- get_acs(geography = "county",
+        variables = medage,
+        state = "MD",
+        output = "wide")
 
 
-
-
+md_counties%>%
+  group_by(NAME)%>%
+  summarise(B01002_001E)%>%
+  arrange(B01002_001E)
 
 ```
 
-
-**Q2** Which Maryland counties have a median age of at least 50? You can use the dataframe you just made to answer this, but you must write code to display only those counties with a median age of at least 50. 
+**Q2** Which Maryland counties have a median age of at least 50? You can use the dataframe you just made to answer this, but you must write code to display only those counties with a median age of at least 50.
 
 ```{r}
 
-
+md_counties%>%
+  filter(B01002_001E > 50)
 
 
 ```
-
 
 **Q3** We're interested in knowing which Maryland counties have the highest percentage of 5-17 year-olds who speak Spanish at home and *also* speak English fluently. Start with the code you wrote for Q1 and alter it to show the total population of 5-17 year-olds by county. Then create a second dataframe to show the number of 5-17 year-olds by county living in homes where Spanish is spoken but who speak English "very well" according to the ACS. To do this, you will need to find the ACS variables that represent those subjects. HINT: the phrase "very well" shows up in multiple variables - you want the one that doesn't include other factors like citizenship.
 
@@ -81,7 +89,30 @@ For each dataframe, rename the `estimate` column to a meaningful name you've giv
 
 Which county has the highest percentage of 5-17 year-olds who speak Spanish at home and also speak English very well?
 
+**Prince George's County has the highest percentage.**
+
 ```{r}
+fem_teen <- "B01001_030"
+masc_teen <- "B01001_006"
+md_counties1 <- get_acs(geography = "county", 
+        variables = c(fem_teen, masc_teen),
+        state = "MD",
+        output = "wide")
+
+english_spanish <- "B16004_005"
+md_counties2 <- get_acs(geography = "county", 
+        variables = english_spanish,
+        state = "MD",
+        output = "wide")
+
+full_join(md_counties1, md_counties2, by = c("GEOID", "NAME"))%>%
+  mutate(total_5_17 = B01001_030E + B01001_006E)%>%
+  mutate(pct_5_17 = B16004_005E / total_5_17)%>%
+  rename("15_17_english" = "B16004_005E")%>%
+  select("GEOID", "NAME", "15_17_english", "total_5_17","pct_5_17")%>%
+  arrange(desc(pct_5_17))
+
+
 
 
 
@@ -96,12 +127,9 @@ Which county has the highest percentage of 5-17 year-olds who speak Spanish at h
 
 ```
 
-
 **Q4** Given the counties with the largest percentage of 5-17 year-olds that speak Spanish at home, which county stands out to you in the data as different from the others? How would you describe the top 5 counties? How would you describe Garrett County's numbers?
 
 PUT ANSWER HERE
-
-
 
 **Q5** Pennsylvanians are currently requesting and submitting mail ballots for the November election. You'd like to know more about the people who live in the areas sending in mail ballots. Read in the `zip_totals.csv` file in the data folder containing the number of returned mail ballots per zip code. Then create a dataframe of Pennsylvania ZCTAs that include the following variables from the 2019 ACS: total population and median income. You will need to add `output = "wide"` to the get_acs function so that you get columns for those two variables' estimates and margins of error.
 
@@ -115,6 +143,14 @@ Join the ZCTA dataframe to the zip totals dataframe and calculate a per capita r
 
 ```{r}
 
+censusvariables2 <- load_variables(2019, "acs5", cache = TRUE)
+
+
+
+total_pop <- "B01003_001"
+med_income <- "B07011_001"
+pa_zip_pop <- get_acs(geography = "zcta", variables = c(total_pop, med_income), year = 2019, survey = "acs5", state = "PA", output = "wide")
+
 
 
 
@@ -124,10 +160,20 @@ Join the ZCTA dataframe to the zip totals dataframe and calculate a per capita r
 
 ```
 
-
 ```{r}
 
+pa_pop <- inner_join(pa_zip_totals, pa_zip_pop, by = c("zip" = "GEOID"))
 
+pa_pop%>%
+  rename("total_pop" = "B01003_001E")%>%
+  rename("med_income" = "B07011_001E")%>%
+  mutate(ballots_per_cap = (count/total_pop)*100)%>%
+  select("zip", "ballots_per_cap", "med_income", "total_pop", "count")%>%
+  arrange(desc(ballots_per_cap))
+
+
+  
+  
 
 
 
